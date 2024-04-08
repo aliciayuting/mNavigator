@@ -1,1 +1,1 @@
-export PYTHONPATH="/Users/alicia/desktop/TIDE:/Users/alicia/desktop/TIDE/simulation"
+export PYTHONPATH="/Users/alicia/desktop/mNavigator"
