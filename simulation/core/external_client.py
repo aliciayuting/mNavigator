@@ -25,11 +25,11 @@ class ExternalClient(object):
         job = self.log_job_creation_time(job, current_time)
         return job, job_create_delay
 
-    def select_initial_worker_id(self):
-        initial_worker_id = None
-        initial_worker_id = np.random.choice(
-            range(self.simulation.total_workers))
-        return initial_worker_id
+    # def select_initial_worker_id(self):
+    #     initial_worker_id = None
+    #     initial_worker_id = np.random.choice(
+    #         range(self.simulation.total_workers))
+    #     return initial_worker_id
 
     def log_job_creation_time(self, job, creation_time):
         for task in job.tasks:

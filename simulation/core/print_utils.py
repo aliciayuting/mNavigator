@@ -31,9 +31,8 @@ def print_slowdown(slow_down_rate):
 def print_stats_by_job_type(response_time_per_type, slow_down_per_type):
     """
     Function to print the stats of the jobs by job type
-    @param
-        response_time_per_type: dict of job type and list of jobs
-        slow_down_per_type: dict of job type and list of slow down
+    @param response_time_per_type: dict of job type and list of jobs
+    @param slow_down_per_type: dict of job type and list of slow down
     """
     width = 20
     print("------------------------- End to End Latency by Job Type -------------------------")

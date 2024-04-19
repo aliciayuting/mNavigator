@@ -6,14 +6,13 @@ from core.simulation import *
 from core.config import *
 from schedulers.algo.nav_heft_algo import *
 from workers.taskworker import *
-from workers.jobworker import *
 
 
-class Simulation_central(Simulation):
+class Centralized_Scheduler_Simulation(Simulation):
     
-    def __init__(self, simulation_name="", job_split="", num_workers=1, job_types_list=[0], produce_breakdown=False):
+    def __init__(self, simulation_name="",  num_workers=1, job_types_list=[0], produce_breakdown=False):
 
-        Simulation.__init__(self, simulation_name=simulation_name, job_split=job_split,\
+        Simulation.__init__(self, simulation_name=simulation_name, \
                             centralized_scheduler=True,\
                             total_workers=num_workers,\
                             job_types_list=job_types_list,\
@@ -32,10 +31,9 @@ class Simulation_central(Simulation):
             return self.hash_schedule_job_and_send_tasks(job, current_time)
 
     def initialize_workers(self):
-        if(self.job_split == "PER_TASK"):
-            for i in range(self.total_workers):
-                self.workers.append(TaskWorker(self, self.slots_per_worker, i))
-            # self.initialize_model_placement_at_workers()
+        for i in range(self.total_workers):
+            self.workers.append(TaskWorker(self, self.slots_per_worker, i))
+        # self.initialize_model_placement_at_workers()
 
     def add_job_completion_time(self, job_id, task_id, completion_time):
         job_is_completed = self.jobs[job_id].job_completed(
@@ -62,16 +60,14 @@ class Simulation_central(Simulation):
         
 
     def nav_heft_schedule_job_and_send_tasks(self, job,  current_time):
-        """ HEFT scheduler to schedule Tasks and send the initial task to worker """
+        """ HEFT scheduler to schedule tasks and send the initial task to worker """
         task_arrival_events = []  # List to store the TaskArrivalEvent to the receiving Workers
-
         # 1. compute scheduling decisions
         # {task_id0->worker_id0, ...}
         activation_graph = nav_heft_job_plan(
             job, self.workers, current_time)
         # 2. assign the planned ADFG to job object
         job.assign_ADFG(activation_graph)
-
         # 3. send the first task to allocated worker
         initial_task = job.tasks[0]
         task_arrival_time = current_time + \
@@ -82,9 +78,8 @@ class Simulation_central(Simulation):
         return task_arrival_events
 
     def hash_schedule_job_and_send_tasks(self, job, current_time):
-        """ hash scheme to execute Tasks and then send the initial task to worker """
+        """ hash scheme to schedule tasks and send the initial task to worker """
         task_arrival_events = []  # List to store the TaskArrivalEvent to the receiving Workers
-
         # 1. assign the task in job object to the worker based on hashing
         activation_graph = {}  # {task_id0->worker_id0, ...}
         for task in job.tasks:
@@ -92,7 +87,6 @@ class Simulation_central(Simulation):
                 range(self.total_workers), replace=True)
             activation_graph[task.task_id] = allocated_worker_id
         job.assign_ADFG(activation_graph)
-
         # 2. send the first task to allocated worker
         initial_task = job.tasks[0]
         task_arrival_time = current_time + \
@@ -100,14 +94,4 @@ class Simulation_central(Simulation):
         worker_index = activation_graph[initial_task.task_id]
         task_arrival_events.append(EventOrders(
             task_arrival_time, TaskArrival(self.workers[worker_index], initial_task, job.id)))
-        return task_arrival_events
-
-    def affinity_schedule_job_and_send_tasks(self, job, current_time):
-        """ hash scheme to execute Tasks and then send the initial task to worker """
-        task_arrival_events = []  # List to store the TaskArrivalEvent to the receiving Workers
-
-        # 1. assign the task in job object to the worker based on hashing
-
-        # task_arrival_events.append(EventOrders(
-        #     task_arrival_time, TaskArrival(self.workers[worker_index], initial_task, job.id)))
         return task_arrival_events

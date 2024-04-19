@@ -18,7 +18,6 @@ class Simulation(object):
     def __init__(
             self,
             simulation_name,
-            job_split,  
             centralized_scheduler=False,  
             dynamic_adjust=False,  
             total_workers=1,
@@ -28,11 +27,9 @@ class Simulation(object):
     ):
         self.simulation_name = simulation_name
         self.centralized_scheduler = centralized_scheduler
-        self.job_split = job_split
         self.total_workers = total_workers
         self.slots_per_worker = slots_per_worker
         self.JOB_TYPES_LIST = job_types_list
-        self.job_split = job_split
         self.dynamic_adjust = dynamic_adjust
         self.workers = []
         self.metadata_service = MetadataService()

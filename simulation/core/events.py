@@ -6,31 +6,21 @@ from core.config import *
 
 
 class Event(object):
-    """ Abstract class representing events. """
-
     def __init__(self):
         raise NotImplementedError("Event is an abstract class and cannot be "
                                   "instantiated directly")
 
     def run(self, current_time):
-        """ Returns any events that should be added to the queue. """
         raise NotImplementedError("The run() method must be implemented by "
                                   "each class subclassing Event")
 
     def to_string(self, current_time):
-        """ Returns the string describing the event """
         raise NotImplementedError("The to_string() method must be implemented by "
                                   "each class subclassing Event")
 
 
 class JobCreationAtExternalClient(Event):
-    """
-    Event signifying that a Job is created at External client
-    JobCreationAtExternalClient(s) Events 
-    1. generate one another in a chain reaction.
-    2. followup a JobArrival___ event for cloud to execute.
-    """
-    job_creation_counter = 0  # static variable
+    job_creation_counter = 0 
 
     def __init__(self, simulation, external_client_id):
         self.simulation = simulation
@@ -45,17 +35,20 @@ class JobCreationAtExternalClient(Event):
         new_events = []
         if self.job_creation_counter > 10 + TOTAL_NUM_OF_JOBS:
             return new_events
-        # 1.  JobCreationAtExternalClient(s) generate one another in a chain reaction
+        # 1.  JobCreationAtExternalClient event happens one after another with creation_delay interval
         new_events.append(EventOrders(current_time + creation_delay,
                           JobCreationAtExternalClient(self.simulation, self.external_client_id)))
-        # 2. create a JobArrivalAtScheduler event
+        # 2. After job created, it would arrive at the system, which either processed by scheduler(centralized) or a worker(decentralized)
         if(self.simulation.centralized_scheduler):
+            # ALICIA TODO: 1. why is it not current_time + creation delay + CPU_to_CPU_delay(job.tasks[0].input_size)
+            #              2. why do we not have an event for job arrival ? but this happen in the same event with JobCreation
             new_events.append(EventOrders(current_time + CPU_to_CPU_delay(job.tasks[0].input_size),
                                           JobArrivalAtScheduler(self.simulation, job)))
             # new_events.append(EventOrders(current_time + UplinkEdgeToCloud_delay(job.tasks[0].input_size),
             #                               JobArrivalAtScheduler(self.simulation, job)))
         else:
-            initial_worker_id = self.simulation.external_clients[self.external_client_id].select_initial_worker_id()
+            initial_worker_id = np.random.choice(range(self.simulation.total_workers))
+            # initial_worker_id = self.simulation.external_clients[self.external_client_id].select_initial_worker_id()
             new_events.append(EventOrders(current_time + CPU_to_CPU_delay(job.tasks[0].input_size),
                                           JobArrivalAtWorker(self.simulation, job, initial_worker_id)))
             # new_events.append(EventOrders(current_time + UplinkEdgeToCloud_delay(job.tasks[0].input_size),
@@ -78,12 +71,8 @@ class JobArrivalAtScheduler(Event):
 
     def run(self, current_time):
         # Schedule job
-        if self.simulation.job_split == "PER_TASK":
-            new_events = self.simulation.schedule_job_and_send_tasks(
-                self.job, current_time)
-        elif self.simulation.job_split == "PER_JOB":
-            new_events = self.simulation.schedule_job_and_send_job(
-                self.job, current_time)
+        new_events = self.simulation.schedule_job_and_send_tasks(
+            self.job, current_time)
         return new_events
 
     def to_string(self):
@@ -102,14 +91,9 @@ class JobArrivalAtWorker(Event):
         self.job = job
 
     def run(self, current_time):
-        # Schedule job
         new_events = []
-        if self.simulation.job_split == "PER_TASK":
-            new_events = self.simulation.workers[self.worker_id].schedule_job_heft(
-                current_time, self.job)
-        # elif self.simulation.job_split == "PER_JOB":
-        #     new_events = self.simulation.schedule_job_and_send_job(
-        #         self.job, current_time)
+        new_events = self.simulation.workers[self.worker_id].schedule_job_heft(
+            current_time, self.job)
         return new_events
 
     def to_string(self):
@@ -126,7 +110,6 @@ class TaskArrival(Event):
         self.job_id = job_id
 
     def run(self, current_time):
-        # log tracking for this task
         self.task.log.set_task_placed_on_worker_queue_timestamp(current_time)
         return self.worker.add_task(current_time, self.task)
 
@@ -156,8 +139,8 @@ class TaskEndEvent(Event):
 
     def __init__(self, worker, job_id=-1, task_id=-1):
         self.worker = worker
-        self.job_id = job_id    # integer representing the job_id
-        self.task_id = task_id  # integer representing the task_id
+        self.job_id = job_id    
+        self.task_id = task_id  
 
     def run(self, current_time):
         return self.worker.free_slot(current_time)
@@ -166,7 +149,6 @@ class TaskEndEvent(Event):
         return "[Task End (Job {} - Task {}) at Worker {}] ===".format(self.job_id, self.task_id, self.worker.worker_id)
 
 
-# for PER_JOB scheduler
 class JobAssignEvent(Event):
     """
     Used in PER_JOB scheduler.
@@ -201,10 +183,6 @@ class JobEndEvent(Event):
 
 
 class EventOrders:
-    """
-    Used so that the Simulation keeps track of the priority queue order
-    """
-
     def __init__(self, current_time, event):
         self.priority = current_time
         self.current_time = current_time

@@ -1,8 +1,8 @@
 import os
 import sys
 
-from schedulers.centralized.simulation_central import *
-from schedulers.decentralized.simulation_decentral import *
+from schedulers.centralized.centralized_scheduler_simulation import *
+from schedulers.decentralized.decentralized_scheduler_simulation import *
 
 
 sys.dont_write_bytecode = True
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     
     # 2. Run and collect data
     if "centralheft" in experiment_schedulers:
-        sim = Simulation_central(simulation_name="centralheft", job_split="PER_TASK",
+        sim = Centralized_Scheduler_Simulation(simulation_name="centralheft",
                                     num_workers=TOTAL_NUM_OF_WORKERS, job_types_list=plotting_job_type_list)
         sim.run()
 
@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     if "hashtask" in experiment_schedulers:
         OUTPUT_FILENAME = "hashtask"
-        sim = Simulation_central(simulation_name="hashtask", job_split="PER_TASK",
+        sim = Centralized_Scheduler_Simulation(simulation_name="hashtask", 
                                     num_workers=TOTAL_NUM_OF_WORKERS, job_types_list=plotting_job_type_list)
         sim.run()
         
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     if "decentralheft" in experiment_schedulers:
         OUTPUT_FILENAME = "decentralheft"
 
-        sim = Simulation_decentral(simulation_name="decentralheft", job_split="PER_TASK",
+        sim = Decentralized_Scheduler_Simulation(simulation_name="decentralheft", 
                                     num_workers=TOTAL_NUM_OF_WORKERS, job_types_list=plotting_job_type_list,
                                     dynamic_adjust=False, \
                                     consider_load=True, \
